@@ -60,9 +60,11 @@ Where:
 2. **Scattering**: Suspended sediments, particles, bubbles
 3. **Wavelength Dependency**: Blue/green light penetrates deeper than red/NIR
 
-### Key Algorithms
+### Comprehensive SDB Algorithm Classification
 
-#### 1. Stumpf Algorithm (Linear Transform)
+#### 1. Empirical Methods
+
+**A. Stumpf et al. (2003) - Band Ratio Method**
 ```python
 # Pseudo-depth calculation
 pSDB = ln(n × B_blue) / ln(n × B_green)
@@ -70,15 +72,64 @@ pSDB = ln(n × B_blue) / ln(n × B_green)
 # Final depth: SDB = m1 × pSDB - m0
 ```
 
-#### 2. Lyzenga Algorithm (Multiple Linear Regression)
+**B. Lyzenga (1978, 1981) - Multiple Linear Regression**
 ```python
 # Depth = a₀ + a₁×ln(B₁) + a₂×ln(B₂) + ... + aₙ×ln(Bₙ)
 ```
 
-#### 3. Physics-Based Models
-- Radiative transfer equation solving
-- Bottom reflectance consideration
-- Water column properties integration
+**C. Polcyn et al. (1970) - Simple Band Ratio**
+```python
+# Depth ∝ ln(B_blue) / ln(B_green)
+```
+
+**D. Jupp (1988) - Linear Transform**
+```python
+# Depth = a + b × ln(B_blue) + c × ln(B_green)
+```
+
+#### 2. Semi-Analytical/Physics-Based Methods
+
+**A. Lee et al. (1999) - Radiative Transfer Model**
+- Models water-leaving radiance using inherent optical properties
+- Accounts for bottom reflectance, water column properties
+- Requires inversion of radiative transfer equations
+
+**B. ALUT (Hedley et al., 2009) - Adaptive Look-Up Table**
+- Uses Lee model with hierarchical parameter optimization
+- Pre-computed look-up tables for faster processing
+- Estimates 6 parameters: P, G, X, H, E, M
+
+**C. Maritorena et al. (1994) - Bio-optical Model**
+- Incorporates chlorophyll and suspended sediment effects
+- Uses semi-analytical approach with empirical components
+
+#### 3. Machine Learning Methods
+
+**A. Support Vector Regression (SVR)**
+- Non-linear regression using kernel functions
+- Effective for complex water conditions
+
+**B. Random Forest (RF)**
+- Ensemble method using multiple decision trees
+- Handles multiple spectral features effectively
+
+**C. Artificial Neural Networks (ANN)**
+- Deep learning approaches for complex pattern recognition
+- Can incorporate multiple data sources
+
+**D. K-Nearest Neighbors (KNN)**
+- Instance-based learning for local depth estimation
+- Simple but effective for homogeneous areas
+
+#### 4. Hybrid Methods
+
+**A. Empirical + ML Enhancement**
+- Use traditional algorithms as features for ML models
+- Combine multiple empirical outputs
+
+**B. Physics-Informed ML**
+- Incorporate physical constraints in ML models
+- Use radiative transfer principles as regularization
 
 ### Sentinel-2 Band Optimization
 
@@ -139,7 +190,7 @@ def calculate_psdb(blue, green, n_const=1000):
     epsilon = 1e-10
     blue_safe = np.maximum(blue, epsilon)
     green_safe = np.maximum(green, epsilon)
-    
+
     psdb = np.log(n_const * blue_safe) / np.log(n_const * green_safe)
     return psdb
 
@@ -147,33 +198,33 @@ def water_mask(blue, green, red, nir, swir1):
     """Create water mask using spectral indices"""
     mndwi = (green - swir1) / (green + swir1)
     ndwi = (green - nir) / (green + nir)
-    
+
     water_mask = (mndwi > 0.2) | (ndwi > 0.2)
     return water_mask
 
 def sdb_processing(sentinel2_path, depth_samples_path):
     """Complete SDB processing workflow"""
-    
+
     # Read Sentinel-2 data
     with rasterio.open(sentinel2_path) as src:
         bands = src.read()
         transform = src.transform
         crs = src.crs
-    
+
     blue, green, red, nir, swir1 = bands[0:5]
-    
+
     # Create water mask
     mask = water_mask(blue, green, red, nir, swir1)
-    
+
     # Calculate pSDB
     psdb = calculate_psdb(blue, green)
-    
+
     # Apply water mask
     psdb_masked = np.where(mask, psdb, np.nan)
-    
+
     # Load depth samples and train model
     # (Implementation depends on depth sample format)
-    
+
     return psdb_masked, mask
 ```
 
@@ -201,7 +252,7 @@ def sentinel2_sdb_workflow(image_path, aoi_shapefile=None):
     """
     Complete Sentinel-2 SDB processing workflow
     """
-    
+
     # 1. Load and preprocess Sentinel-2 data
     with rasterio.open(image_path) as src:
         if aoi_shapefile:
@@ -211,25 +262,25 @@ def sentinel2_sdb_workflow(image_path, aoi_shapefile=None):
         else:
             out_image = src.read()
             out_transform = src.transform
-    
+
     # 2. Extract relevant bands
     blue = out_image[1]    # Band 2 (490nm)
     green = out_image[2]   # Band 3 (560nm)
     red = out_image[3]     # Band 4 (665nm)
     nir = out_image[7]     # Band 8 (842nm)
     swir1 = out_image[10]  # Band 11 (1610nm)
-    
+
     # 3. Water body detection
     mndwi = (green - swir1) / (green + swir1 + 1e-10)
     water_pixels = mndwi > 0.2
-    
+
     # 4. Calculate pSDB
     n_const = 1000
     psdb = np.log(n_const * blue) / np.log(n_const * green)
-    
+
     # 5. Apply water mask
     psdb_water = np.where(water_pixels, psdb, np.nan)
-    
+
     return psdb_water, water_pixels, out_transform
 ```
 
@@ -243,16 +294,16 @@ def ml_enhanced_sdb(psdb_data, depth_samples, test_size=0.3):
     """
     Machine learning enhanced SDB using Random Forest
     """
-    
+
     # Prepare features (can include multiple spectral indices)
     X = psdb_data.reshape(-1, 1)  # Can be expanded to multiple features
     y = depth_samples
-    
+
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=42
     )
-    
+
     # Train Random Forest model
     rf_model = RandomForestRegressor(
         n_estimators=100,
@@ -260,16 +311,16 @@ def ml_enhanced_sdb(psdb_data, depth_samples, test_size=0.3):
         random_state=42
     )
     rf_model.fit(X_train, y_train)
-    
+
     # Predict and evaluate
     y_pred = rf_model.predict(X_test)
-    
+
     mae = mean_absolute_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
-    
+
     print(f"Mean Absolute Error: {mae:.2f}m")
     print(f"R² Score: {r2:.3f}")
-    
+
     return rf_model, mae, r2
 ```
 
