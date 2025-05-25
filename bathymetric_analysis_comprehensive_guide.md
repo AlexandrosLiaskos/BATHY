@@ -10,43 +10,33 @@
 
 ## Introduction
 
-Bathymetric analysis is crucial for understanding underwater topography, supporting navigation, coastal management, marine research, and environmental monitoring. This comprehensive guide explores four primary bathymetric analysis methods, with particular emphasis on **multispectral signal attenuation algorithms** used in satellite-derived bathymetry (SDB) and their Python implementations for Sentinel-2 data.
+Bathymetric analysis is crucial for understanding underwater topography, supporting navigation, coastal management, marine research, and environmental monitoring.
 
 ## Overview of Bathymetric Analysis Methods
 
-Based on the analysis of current bathymetric technologies, four primary methods dominate the field:
-
 ### 1. Airborne Lidar Bathymetry (ALB)
 - **Sensor**: Topobathymetric Lidar using green laser (532 nm) for water penetration
-- **Platform**: Aircraft, UAVs
 - **Max Depth**: 10-40m in coastal waters, up to ~70m in exceptionally clear conditions
 - **Principle**: Light pulse time-of-flight measurement
-- **Advantages**: High accuracy, direct measurement
-- **Limitations**: Expensive, weather dependent, limited by water clarity
+- **Platform**: Aircraft, UAVs (Unmanned Aerial Vehicle)
 
 ### 2. Multibeam Echosounder (MBES)
 - **Sensor**: Acoustic transducers forming fan-shaped swath
-- **Platform**: Vessels, AUVs, USVs
+- **Platform**: Vessels (Ships, Boats), AUVs (Autonomous Underwater Vehicles), USVs (Unmanned Surface Vehicles)
 - **Max Depth**: 50-500m (shallow water systems) to full ocean depth (deep water systems)
 - **Principle**: Acoustic time-of-flight measurement
-- **Advantages**: High resolution, weather independent
-- **Limitations**: Requires vessel deployment, expensive for large areas
 
 ### 3. Singlebeam Echosounder (SBES)
 - **Sensor**: Single nadir-looking acoustic transducer
 - **Platform**: Vessels, buoys
 - **Max Depth**: 100-200m (high frequency) to >1000m (low frequency)
 - **Principle**: Single-point acoustic measurement
-- **Advantages**: Simple, cost-effective
-- **Limitations**: Limited spatial coverage, requires vessel tracks
 
 ### 4. Satellite-Derived Bathymetry (SDB)
 - **Sensor**: Multispectral/Hyperspectral optical sensors (Sentinel-2, Landsat, WorldView)
 - **Platform**: Satellites, aircraft, UAVs
 - **Max Depth**: 20-30m in clear water, <5m in turbid water
 - **Principle**: **Multispectral signal attenuation analysis**
-- **Advantages**: Large area coverage, cost-effective, repeatable
-- **Limitations**: Limited to shallow, clear waters
 
 ## Multispectral Signal Attenuation Algorithms
 
